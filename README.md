@@ -10,3 +10,10 @@ in real time.
 index.html: HTML file that loads p5.js and tensorflow.js
 autoreg.js: File that contains all the code
 p5.js: Loaded into the html file
+
+## Inspiration
+
+This program is inspired by The Coding Train's video in which he uses
+Tensorflow.js for quadratic polynomial regression using p5.js. It (obviously)
+uses ideas and a lot of the code from his main implementation, but also has
+features and code written/added by me.
