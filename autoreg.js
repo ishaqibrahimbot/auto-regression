@@ -4,6 +4,8 @@ let userY = [];
 
 //The coefficients of the polynomial that must be trained
 let a, b, c;
+let m, d;
+let selection = "quadratic";
 
 //Sets the learning rate and the optimizer we will use
 const learning_rate = 0.05;
@@ -14,11 +16,21 @@ function setup(){
     createCanvas(400, 400); //Makes a 400x400 canvas
     background(0); //Sets background to black
 
-    //Adding the 3 quadratic coefficients to the graph as variables
-    a = tf.variable(tf.scalar(random(1)));
-    b = tf.variable(tf.scalar(random(1)));
-    c = tf.variable(tf.scalar(random(1)));
+    //Adding the coefficients to the graph as variables based on 'selection'
+    defineVars(selection);
 
+}
+
+function defineVars(selection){
+    if (selection === "linear"){
+        m = tf.variable(tf.scalar(random(1)));
+        d = tf.variable(tf.scalar(random(1)));
+    }
+    else if(selection == "quadratic"){
+        a = tf.variable(tf.scalar(random(1)));
+        b = tf.variable(tf.scalar(random(1)));
+        c = tf.variable(tf.scalar(random(1)));
+    };
 }
 
 function canvasToMap(x, y) {
@@ -76,13 +88,25 @@ function loss(labels, preds){
 
 }
 
+function definePred(selection, x_tensor){
+    if (selection === "linear"){
+        y_hat = x_tensor.mul(m).add(d);
+        return y_hat;
+    }
+    else if(selection == "quadratic"){
+        y_hat = x_tensor.square().mul(a).add(x_tensor.mul(b)).add(c);
+        return y_hat; 
+    };
+}
+
 function predict(x){
     //Takes in a value x and returns the corresponding y value based on the current
     //coefficients of the equation
 
     //x needs to be a 1d tensor
     x_tensor = tf.tensor1d(x);
-    y_hat = x_tensor.square().mul(a).add(x_tensor.mul(b)).add(c);
+    y_hat = definePred(selection, x_tensor);
+    
 
     return y_hat;
 }
