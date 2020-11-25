@@ -133,8 +133,11 @@ function draw(){
 
         if (userX.length > 0){
             const y_tensor = tf.tensor1d(userY); //Converts userY to tensor format
+            let cost = loss(predict(userX), y_tensor);
+            console.log(cost.dataSync()[0]);
             optimizer.minimize(() => loss(predict(userX), y_tensor)); //This is training step which
             //will run every time the draw loop runs and there is a user input
+            //console.log(cost);
         }
     });
 
