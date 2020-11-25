@@ -3,9 +3,10 @@ let userX = [];
 let userY = [];
 
 //The coefficients of the polynomial that must be trained
+let e, f, g, h;
 let a, b, c;
 let m, d;
-let selection = "quadratic";
+let selection = "cubic";
 
 //Sets the learning rate and the optimizer we will use
 const learning_rate = 0.05;
@@ -30,6 +31,12 @@ function defineVars(selection){
         a = tf.variable(tf.scalar(random(1)));
         b = tf.variable(tf.scalar(random(1)));
         c = tf.variable(tf.scalar(random(1)));
+    }
+    else if(selection === "cubic"){
+        e = tf.variable(tf.scalar(random(1)));
+        f = tf.variable(tf.scalar(random(1)));
+        g = tf.variable(tf.scalar(random(1)));
+        h = tf.variable(tf.scalar(random(1)));
     };
 }
 
@@ -96,6 +103,10 @@ function definePred(selection, x_tensor){
     else if(selection == "quadratic"){
         y_hat = x_tensor.square().mul(a).add(x_tensor.mul(b)).add(c);
         return y_hat; 
+    }
+    else if(selection === "cubic"){
+        y_hat = x_tensor.square().mul(x_tensor).mul(e).add(x_tensor.square().mul(f)).add(x_tensor.mul(g)).add(h);
+        return y_hat;
     };
 }
 
