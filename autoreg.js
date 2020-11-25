@@ -1,12 +1,13 @@
 //Two arrays/lists that will store the user input in the form of mouseX, mouseY
 let userX = [];
 let userY = [];
+let lossMatrix = [0, 0, 0];
 
 //The coefficients of the polynomial that must be trained
 let e, f, g, h;
 let a, b, c;
 let m, d;
-let selection = "cubic";
+// let selection = "cubic";
 
 //Sets the learning rate and the optimizer we will use
 const learning_rate = 0.05;
@@ -18,27 +19,35 @@ function setup(){
     background(0); //Sets background to black
 
     //Adding the coefficients to the graph as variables based on 'selection'
-    defineVars(selection);
+    m = tf.variable(tf.scalar(random(1)));
+    d = tf.variable(tf.scalar(random(1)));
+    a = tf.variable(tf.scalar(random(1)));
+    b = tf.variable(tf.scalar(random(1)));
+    c = tf.variable(tf.scalar(random(1)));
+    e = tf.variable(tf.scalar(random(1)));
+    f = tf.variable(tf.scalar(random(1)));
+    g = tf.variable(tf.scalar(random(1)));
+    h = tf.variable(tf.scalar(random(1)));
 
 }
 
-function defineVars(selection){
-    if (selection === "linear"){
-        m = tf.variable(tf.scalar(random(1)));
-        d = tf.variable(tf.scalar(random(1)));
-    }
-    else if(selection == "quadratic"){
-        a = tf.variable(tf.scalar(random(1)));
-        b = tf.variable(tf.scalar(random(1)));
-        c = tf.variable(tf.scalar(random(1)));
-    }
-    else if(selection === "cubic"){
-        e = tf.variable(tf.scalar(random(1)));
-        f = tf.variable(tf.scalar(random(1)));
-        g = tf.variable(tf.scalar(random(1)));
-        h = tf.variable(tf.scalar(random(1)));
-    };
-}
+// function defineVars(selection){
+//     if (selection === "linear"){
+//         m = tf.variable(tf.scalar(random(1)));
+//         d = tf.variable(tf.scalar(random(1)));
+//     }
+//     else if(selection == "quadratic"){
+//         a = tf.variable(tf.scalar(random(1)));
+//         b = tf.variable(tf.scalar(random(1)));
+//         c = tf.variable(tf.scalar(random(1)));
+//     }
+//     else if(selection === "cubic"){
+//         e = tf.variable(tf.scalar(random(1)));
+//         f = tf.variable(tf.scalar(random(1)));
+//         g = tf.variable(tf.scalar(random(1)));
+//         h = tf.variable(tf.scalar(random(1)));
+//     };
+// }
 
 function canvasToMap(x, y) {
     //A function I wrote myself to map x,y coordinates from the 400x400 canvas onto a grid
@@ -110,7 +119,7 @@ function definePred(selection, x_tensor){
     };
 }
 
-function predict(x){
+function predict(x, selection){
     //Takes in a value x and returns the corresponding y value based on the current
     //coefficients of the equation
 
@@ -122,6 +131,18 @@ function predict(x){
     return y_hat;
 }
 
+function return_lowest_index(lossMatrix){
+    let lowest = 100;
+    let index = 0;
+    for (let i=0; i<lossMatrix.length; i++){
+        if (lossMatrix[i] < lowest){
+            lowest = lossMatrix[i];
+            index = i;
+        };
+    };
+
+    return index;
+}
 
 function draw(){
     //This is the p5.js function that runs on repeat and is responsible for 
@@ -133,11 +154,24 @@ function draw(){
 
         if (userX.length > 0){
             const y_tensor = tf.tensor1d(userY); //Converts userY to tensor format
-            let cost = loss(predict(userX), y_tensor);
-            console.log(cost.dataSync()[0]);
-            optimizer.minimize(() => loss(predict(userX), y_tensor)); //This is training step which
+            let cubic_cost = optimizer.minimize(() => loss(predict(userX, "cubic"), y_tensor), returnCost = true,
+            varList = [e, f, g, h]); //This is training step which
             //will run every time the draw loop runs and there is a user input
-            //console.log(cost);
+            let cubic_loss = cubic_cost.dataSync()[0];
+            lossMatrix[0] = cubic_loss;
+            console.log("cubic loss: " + cubic_loss);
+
+            let linear_cost = optimizer.minimize(() => loss(predict(userX, "linear"), y_tensor), 
+            returnCost = true, varList = [m ,d]);
+            let linear_loss = linear_cost.dataSync()[0];
+            lossMatrix[1] = linear_loss;
+            console.log("linear loss: " + linear_loss);
+
+            let quadratic_cost = optimizer.minimize(() => loss(predict(userX, "quadratic"), y_tensor),
+            returnCost = true, varList = [a, b, c]);
+            quadratic_loss = quadratic_cost.dataSync()[0];
+            lossMatrix[2] = quadratic_loss;
+            console.log("quadratic loss: " + quadratic_loss);
         }
     });
 
@@ -156,7 +190,18 @@ function draw(){
             curveX.push(i); //Creates datapoints used to plot the curveX
         };
 
-        curveY = predict(curveX); //Gets the model's latest predictions
+        let best_degree = return_lowest_index(lossMatrix);
+        console.log(best_degree);
+        if(best_degree === 0){
+            curveY = predict(curveX, "cubic");
+        }
+        else if (best_degree === 1){
+            curveY = predict(curveX, "linear");
+        }
+        else if (best_degree === 2){
+            curveY = predict(curveX, "quadratic");
+        };
+        // curveY = predict(curveX, "quadratic"); //Gets the model's latest predictions
         curveY_data = curveY.dataSync(); //Extracts the data
 
         beginShape(); //p5.js function that starts plotting a shape
