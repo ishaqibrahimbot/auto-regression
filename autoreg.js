@@ -3,11 +3,65 @@ let userX = [];
 let userY = [];
 let lossMatrix = [0, 0, 0];
 
+let counter = 0; // Keeps track of the # of iterations
+
+//Define the data object for the chart
+let data_set = {
+    labels: [],
+    datasets: [{
+        label: "Linear",
+        fill: false,
+        borderColor: "#f54242",
+        data: []
+    }, {
+        label: "Quadratic",
+        borderColor: "#4245f5",
+        fill: false,
+        data: []
+    }, {
+        label: "Cubic",
+        borderColor: "#42f545",
+        fill: false,
+        data: []
+    }]
+};
+
 //The coefficients of the polynomial that must be trained
 let e, f, g, h;
 let a, b, c;
 let m, d;
-// let selection = "cubic";
+
+//Get the context for the chart
+var ctx = document.getElementById('myChart').getContext('2d');
+
+//Create the chart instance
+var myChart = new Chart(ctx, {
+    type: 'line',
+    data: data_set,
+    options: {
+        scales: {
+            xAxes: [{
+                gridLines: {
+                    display: false
+                },
+                scaleLabel: {
+                    display: true,
+                    labelString: "# of iterations"
+                }
+            }],
+
+            yAxes: [{
+                gridLines: {
+                    display: false
+                },
+                scaleLabel: {
+                    display: true,
+                    labelString: "Cost"
+                }
+            }]
+        }, 
+    }
+    });
 
 //Sets the learning rate and the optimizer we will use
 const learning_rate = 0.05;
@@ -172,8 +226,30 @@ function draw(){
             quadratic_loss = quadratic_cost.dataSync()[0];
             lossMatrix[2] = quadratic_loss;
             console.log("quadratic loss: " + quadratic_loss);
+
+            if(data_set.labels.length >= 80){
+                data_set.labels.shift();
+                data_set.datasets[0].data.shift();
+                data_set.datasets[1].data.shift();
+                data_set.datasets[2].data.shift();
+                data_set.labels.push(counter.toString());
+                data_set.datasets[0].data.push(linear_loss);
+                data_set.datasets[1].data.push(quadratic_loss);
+                data_set.datasets[2].data.push(cubic_loss);
+                myChart.render();
+            }
+            else {
+                data_set.labels.push(counter.toString());
+                data_set.datasets[0].data.push(linear_loss);
+                data_set.datasets[1].data.push(quadratic_loss);
+                data_set.datasets[2].data.push(cubic_loss);
+            };
+
+            myChart.update();
+            counter += 1;
         }
     });
+   
 
     background(0); //resets background to black
     strokeWeight(8); //How large the dots should be

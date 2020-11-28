@@ -1,0 +1,14 @@
+.canvasContainer{
+    max-height: 800px;
+    max-width: 800px;
+    position: absolute;
+    left: 420px;
+    top: 0px;
+}
+
+#myChart{
+    height: 400px;
+    width: 550px;
+    position: relative;
+    top: 0px;
+}
