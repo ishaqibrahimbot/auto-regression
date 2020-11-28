@@ -3,6 +3,29 @@ let userX = [];
 let userY = [];
 let lossMatrix = [0, 0, 0];
 
+//Stops training after this number of same-degree iterations
+let overfitting_threshold = 300;
+
+//True if you want to prevent overfitting, false if not
+let allow_overfitting = true;
+
+let overfitting_iteration_counter = 0;
+
+//Counters that will track the number of iterations for each degree
+let l_counter = 0;
+let q_counter = 0;
+let c_counter = 0;
+
+//initializing the lossses that will be printed
+let linear_loss = 0;
+let quadratic_loss = 0;
+let cubic_loss = 0;
+
+//Booleans that tell whether a particular degree should be trained or not
+let stop_linear = false;
+let stop_quadratic = false;
+let stop_cubic = false;
+
 let counter = 0; // Keeps track of the # of iterations
 
 //Define the data object for the chart
@@ -63,8 +86,16 @@ var myChart = new Chart(ctx, {
     }
     });
 
+
+function stopOverfitting(){
+    allow_overfitting = false;
+}
+
+function allowOverfitting(){
+    allow_overfitting = true;
+}
 //Sets the learning rate and the optimizer we will use
-const learning_rate = 0.05;
+const learning_rate = 0.08;
 const optimizer = tf.train.adam(learning_rate);
 
 //The setup function sets up the canvas and initial code that must be run in the start.
@@ -149,6 +180,12 @@ function mousePressed(){
     let [x, y] = canvasToMap(mouseX, mouseY);
     userX.push(x);
     userY.push(y);
+    l_counter = 0;
+    q_counter = 0;
+    c_counter = 0;
+    stop_linear = false;
+    stop_quadratic = false;
+    stop_cubic = false;
 }
 
 function loss(labels, preds){
@@ -202,53 +239,84 @@ function draw(){
     //This is the p5.js function that runs on repeat and is responsible for 
     //consistently updating the canvas with latest results etc
 
-    tf.tidy(() => {
-        //Manages the extra tensors and tidies them up
-        //Used for the training loop
+    if (userX.length > 0){
 
-        if (userX.length > 0){
-            const y_tensor = tf.tensor1d(userY); //Converts userY to tensor format
+        if(l_counter > overfitting_threshold  && allow_overfitting === false){
+            stop_quadratic = true;
+            stop_cubic = true;
+            console.log("Quadratic and Cubic shut down");
+        }
+        else if(q_counter > overfitting_threshold && allow_overfitting === false){
+            stop_linear = true;
+            stop_cubic = true;
+            console.log("Linear and Cubic shut down");
+        }
+        else if(c_counter > overfitting_threshold && allow_overfitting === false){
+            stop_linear = true;
+            stop_quadratic = true;
+            console.log("Quadratic and Linear shut down");
+        };
+
+        
+        const y_tensor = tf.tensor1d(userY); //Converts userY to tensor format
+
+        if(stop_cubic === true){
+            overfitting_iteration_counter += 1;
+        }
+        else {
             let cubic_cost = optimizer.minimize(() => loss(predict(userX, "cubic"), y_tensor), returnCost = true,
             varList = [e, f, g, h]); //This is training step which
             //will run every time the draw loop runs and there is a user input
-            let cubic_loss = cubic_cost.dataSync()[0];
+            cubic_loss = cubic_cost.dataSync()[0];
             lossMatrix[0] = cubic_loss;
-            console.log("cubic loss: " + cubic_loss);
-
+            // console.log("cubic loss: " + cubic_loss);
+        };
+        
+        if(stop_linear === true){
+            overfitting_iteration_counter += 1;
+        }
+        else {
             let linear_cost = optimizer.minimize(() => loss(predict(userX, "linear"), y_tensor), 
             returnCost = true, varList = [m ,d]);
-            let linear_loss = linear_cost.dataSync()[0];
+            linear_loss = linear_cost.dataSync()[0];
             lossMatrix[1] = linear_loss;
-            console.log("linear loss: " + linear_loss);
-
+            // console.log("linear loss: " + linear_loss);
+        };
+        
+        if(stop_quadratic === true){
+            overfitting_iteration_counter += 1;
+        }
+        else {
             let quadratic_cost = optimizer.minimize(() => loss(predict(userX, "quadratic"), y_tensor),
             returnCost = true, varList = [a, b, c]);
             quadratic_loss = quadratic_cost.dataSync()[0];
             lossMatrix[2] = quadratic_loss;
-            console.log("quadratic loss: " + quadratic_loss);
-
-            if(data_set.labels.length >= 80){
-                data_set.labels.shift();
-                data_set.datasets[0].data.shift();
-                data_set.datasets[1].data.shift();
-                data_set.datasets[2].data.shift();
-                data_set.labels.push(counter.toString());
-                data_set.datasets[0].data.push(linear_loss);
-                data_set.datasets[1].data.push(quadratic_loss);
-                data_set.datasets[2].data.push(cubic_loss);
-                myChart.render();
-            }
-            else {
-                data_set.labels.push(counter.toString());
-                data_set.datasets[0].data.push(linear_loss);
-                data_set.datasets[1].data.push(quadratic_loss);
-                data_set.datasets[2].data.push(cubic_loss);
-            };
-
-            myChart.update();
-            counter += 1;
+            // console.log("quadratic loss: " + quadratic_loss);
+        };
+        
+        if(data_set.labels.length >= 80){
+            data_set.labels.shift();
+            data_set.datasets[0].data.shift();
+            data_set.datasets[1].data.shift();
+            data_set.datasets[2].data.shift();
+            data_set.labels.push(counter.toString());
+            data_set.datasets[0].data.push(linear_loss);
+            data_set.datasets[1].data.push(quadratic_loss);
+            data_set.datasets[2].data.push(cubic_loss);
+            myChart.render();
         }
-    });
+        else {
+            data_set.labels.push(counter.toString());
+            data_set.datasets[0].data.push(linear_loss);
+            data_set.datasets[1].data.push(quadratic_loss);
+            data_set.datasets[2].data.push(cubic_loss);
+        };
+
+        myChart.update();
+        counter += 1;
+
+    };
+    
    
 
     background(0); //resets background to black
@@ -269,12 +337,22 @@ function draw(){
         let best_degree = return_lowest_index(lossMatrix);
         console.log(best_degree);
         if(best_degree === 0){
+            l_counter = 0;
+            q_counter = 0;
+            c_counter += 1;
             curveY = predict(curveX, "cubic");
+
         }
         else if (best_degree === 1){
+            l_counter += 1;
+            q_counter = 0;
+            c_counter = 0;
             curveY = predict(curveX, "linear");
         }
         else if (best_degree === 2){
+            l_counter = 0;
+            q_counter += 1;
+            c_counter = 0;
             curveY = predict(curveX, "quadratic");
         };
         // curveY = predict(curveX, "quadratic"); //Gets the model's latest predictions
