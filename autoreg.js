@@ -85,24 +85,6 @@ function setup(){
 
 }
 
-// function defineVars(selection){
-//     if (selection === "linear"){
-//         m = tf.variable(tf.scalar(random(1)));
-//         d = tf.variable(tf.scalar(random(1)));
-//     }
-//     else if(selection == "quadratic"){
-//         a = tf.variable(tf.scalar(random(1)));
-//         b = tf.variable(tf.scalar(random(1)));
-//         c = tf.variable(tf.scalar(random(1)));
-//     }
-//     else if(selection === "cubic"){
-//         e = tf.variable(tf.scalar(random(1)));
-//         f = tf.variable(tf.scalar(random(1)));
-//         g = tf.variable(tf.scalar(random(1)));
-//         h = tf.variable(tf.scalar(random(1)));
-//     };
-// }
-
 function canvasToMap(x, y) {
     //A function I wrote myself to map x,y coordinates from the 400x400 canvas onto a grid
     //that goes from -1 to 1.
@@ -147,8 +129,10 @@ function mousePressed(){
     //and add them to the arrays userX, userY.
 
     let [x, y] = canvasToMap(mouseX, mouseY);
-    userX.push(x);
-    userY.push(y);
+    if (x>-1 && x<1 && y>-1 && y<1){
+        userX.push(x);
+        userY.push(y);
+    };
 }
 
 function loss(labels, preds){
