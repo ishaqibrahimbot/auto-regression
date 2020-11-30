@@ -3,6 +3,9 @@ let userX = [];
 let userY = [];
 let lossMatrix = [0, 0, 0];
 
+let best_degree = null;
+let degree_key = {0: 'cubic', 1: 'linear', 2: 'quadratic'}; //dictionary that defines mapping of best degree
+
 let counter = 0; // Keeps track of the # of iterations
 
 //Define the data object for the chart
@@ -30,6 +33,25 @@ let data_set = {
 let e, f, g, h;
 let a, b, c;
 let m, d;
+
+//Getting the slider into the game
+var slider = document.getElementById("myRange");
+var output = document.getElementById("demo");
+
+var set_learning_rate = slider.value/100; //Sets the initial value for the learning rate
+
+var learning_rate_text = document.getElementById("learning_rate_value"); //Stores the learning rate placeholder
+var best_degree_text = document.getElementById("best_degree_value"); //Stores the best degree placeholder
+
+best_degree_text.innerHTML = degree_key[best_degree];
+learning_rate_text.innerHTML = set_learning_rate; //Initializes the text to the right value
+
+//This function keeps on updating the slider value and the optimizer learning rate
+slider.oninput = function(){
+    set_learning_rate = this.value/100;
+    learning_rate_text.innerHTML = set_learning_rate;
+    optimizer = tf.train.adam(set_learning_rate);
+}
 
 //Get the context for the chart
 var ctx = document.getElementById('myChart').getContext('2d');
@@ -64,8 +86,7 @@ var myChart = new Chart(ctx, {
     });
 
 //Sets the learning rate and the optimizer we will use
-const learning_rate = 0.05;
-const optimizer = tf.train.adam(learning_rate);
+var optimizer = tf.train.adam(set_learning_rate);
 
 //The setup function sets up the canvas and initial code that must be run in the start.
 function setup(){
@@ -197,19 +218,19 @@ function draw(){
             //will run every time the draw loop runs and there is a user input
             let cubic_loss = cubic_cost.dataSync()[0];
             lossMatrix[0] = cubic_loss;
-            console.log("cubic loss: " + cubic_loss);
+            // console.log("cubic loss: " + cubic_loss);
 
             let linear_cost = optimizer.minimize(() => loss(predict(userX, "linear"), y_tensor), 
             returnCost = true, varList = [m ,d]);
             let linear_loss = linear_cost.dataSync()[0];
             lossMatrix[1] = linear_loss;
-            console.log("linear loss: " + linear_loss);
+            // console.log("linear loss: " + linear_loss);
 
             let quadratic_cost = optimizer.minimize(() => loss(predict(userX, "quadratic"), y_tensor),
             returnCost = true, varList = [a, b, c]);
             quadratic_loss = quadratic_cost.dataSync()[0];
             lossMatrix[2] = quadratic_loss;
-            console.log("quadratic loss: " + quadratic_loss);
+            // console.log("quadratic loss: " + quadratic_loss);
 
             if(data_set.labels.length >= 80){
                 data_set.labels.shift();
@@ -250,8 +271,9 @@ function draw(){
             curveX.push(i); //Creates datapoints used to plot the curveX
         };
 
-        let best_degree = return_lowest_index(lossMatrix);
-        console.log(best_degree);
+        best_degree = return_lowest_index(lossMatrix);
+        best_degree_text.innerHTML = degree_key[best_degree];
+        console.log("best degree:  " + degree_key[best_degree]);
         if(best_degree === 0){
             curveY = predict(curveX, "cubic");
         }
