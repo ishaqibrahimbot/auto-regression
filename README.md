@@ -5,6 +5,9 @@ automatically finds the best fit line or polynomial that minimizes the
 mean square distance (and is the best degree polynomial) and displays it
 in real time.
 
+## Access at:
+https://ishaqibrahimbot.github.io/auto-regression/
+
 ## Contains
 
 index.html: HTML file that loads p5.js and tensorflow.js
